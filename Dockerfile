@@ -138,6 +138,12 @@ USER root
 # zsh — already installed in the base image but not the vscode user's default shell.
 RUN sudo chsh -s /usr/bin/zsh vscode
 
+# Agent config dirs, owned by vscode. Otherwise Docker creates them as root
+# when devcontainer.json mounts a volume or files there, and the agents can't
+# write credentials, sessions or history. A new, empty volume takes on the
+# owner of the image dir it's mounted over.
+RUN sudo install -d -o vscode -g vscode /home/vscode/.claude /home/vscode/.codex
+
 # ---- Sanity check at build time --------------------------------------------
 # Chromium gets two checks, not one: --headless --screenshot proves the
 # browser renders at all, and the playwright-core launch proves
