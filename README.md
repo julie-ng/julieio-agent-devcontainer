@@ -30,12 +30,6 @@ Pre-bake tools used regularly by agents and me – saves time and network traffi
 
 - Node 24 via `nvm`. `$NVM_DIR/current` is on `PATH`, so `node` also works in non-interactive shells.
 - Other versions per project: `nvm install 22`, or `nvm install` with an `.nvmrc`. This switches the whole container.
-- `postCreateCommand` runs in `sh`, so load `nvm` first:
-
-  ```json
-  "postCreateCommand": ". $NVM_DIR/nvm.sh && nvm install && npm install"
-  ```
-
 - Global npm packages are per version, so `@playwright/mcp` only exists under Node 24.
 
 ### Chromium
