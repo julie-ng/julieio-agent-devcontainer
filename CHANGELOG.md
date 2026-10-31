@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.0](https://github.com/julie-ng/agent-devcontainer/compare/v0.4.0...v0.5.0) (2026-10-31)
+
+### ⚠ BREAKING CHANGES
+
+* **image:** The non-root user is now `vscode` instead of `node`,
+  so mounts into /home/node must move to /home/vscode. The -frontend tags
+  are no longer published.
+
+### Features
+
+* **image:** remove gitlab cli ([3f219fe](https://github.com/julie-ng/agent-devcontainer/commit/3f219fee99b0c7a6369324e4336b423951be00a4))
+* **image:** single debian image with node and chromium ([beeccef](https://github.com/julie-ng/agent-devcontainer/commit/beeccef69f708f2fc19be397af0ef66bc2413ddb))
 ## [0.4.0](https://github.com/julie-ng/agent-devcontainer/compare/v0.3.0...v0.4.0) (2026-09-21)
 
 ### Features
