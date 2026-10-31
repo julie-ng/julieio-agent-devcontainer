@@ -4,15 +4,12 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/Users/<user>/path/to/project,type=bind,consistency=cached",
   "workspaceFolder": "/Users/<user>/path/to/project",
   "features": {
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12"
-    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": false
     }
   },
   "mounts": [
-    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
   ],
   "postCreateCommand": "npm install",
   "dotfiles": {

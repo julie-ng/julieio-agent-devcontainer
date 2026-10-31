@@ -1,11 +1,17 @@
-# agent-devcontainer
+# [julieio-agent](https://github.com/julieio-agent) – dev container image 
 
-A devcontainer base image for agent-assisted development. Coding agents (e.g. Claude Code) run through the IDE, not inside this image — this `docker.io/julieio/agent-devcontainer` just provides the OS tooling a devcontainer needs.
+To limit LLM access to my identity and priviledged access I run Claude Code and Codex in this custom [Dev Container](https://containers.dev/) image in [Zed IDE](https://zed.dev/).
 
-> [!NOTE]
-> Not everything is in the Dockerfile — Python and Docker are added as devcontainer features, so they're pinned and visible in `devcontainer.json` instead. See the sections below.
+Why? See [julie.io/ai-native-sdlc](https://julie.io/ai-native-sdlc)
+
+## Base Image
+
+- Base is `mcr.microsoft.com/devcontainers/base:debian13` for devcontainer-spec compatibility (non-root `vscode` user, sudo, features). 
+- Debian rather than Ubuntu because Ubuntu's apt `chromium` is only a stub for the snap, and snaps don't run in containers.
 
 ## Included Tools
+
+Pre-bake tools used regularly by agents and me – saves time and network traffic across sessions.
 
 | Tool | Why |
 |---|---|
@@ -14,20 +20,42 @@ A devcontainer base image for agent-assisted development. Coding agents (e.g. Cl
 | `gh` | GitHub CLI |
 | `kubectl` | Talk to a Kubernetes cluster |
 | `kind` | Local Kubernetes cluster — needs a working Docker daemon (see [Docker in Docker](#docker-in-docker)) |
+| `uv` | Python package and version manager |
+| Node 24 (via `nvm`) | Default Node version — other versions per project with `nvm install` (see below) |
+| `chromium` + `@playwright/mcp` | Headless browser so agents can check and screenshot frontends (see below) |
 | `openssh-client` | `ssh-keygen` and general SSH usage |
 | `unzip`, `bzip2`, `less`, `vim`, `ca-certificates`, `gnupg` | General sandbox hygiene |
-| Python 3.12 | Added via a devcontainer feature, not baked into the image (see below) |
-| Docker | Added via a devcontainer feature, not baked into the image (see below) |
 
-Base image: `mcr.microsoft.com/devcontainers/javascript-node:22`, for devcontainer-spec compatibility (non-root `node` user, sudo, features).
+### Node
+
+- Node 24 via `nvm`. `$NVM_DIR/current` is on `PATH`, so `node` also works in non-interactive shells.
+- Other versions per project: `nvm install 22`, or `nvm install` with an `.nvmrc`. This switches the whole container.
+- `postCreateCommand` runs in `sh`, so load `nvm` first:
+
+  ```json
+  "postCreateCommand": ". $NVM_DIR/nvm.sh && nvm install && npm install"
+  ```
+
+- Global npm packages are per version, so `@playwright/mcp` only exists under Node 24.
+
+### Chromium
+
+- Debian's apt `chromium` (arm64-native) plus `@playwright/mcp`, so agents can check and screenshot frontends.
+- Playwright's own Chromium has no linux-arm64 build, so pass the system one in the MCP server args:
+
+  ```
+  --executable-path /usr/bin/chromium --browser chromium
+  ```
 
 ### Python
 
-Python is **not** baked into the image. It's added declaratively via the official `ghcr.io/devcontainers/features/python:1` feature in `devcontainer.json` (pinned to `3.12`), keeping the version visible and diffable in `devcontainer.json` rather than buried in a Dockerfile `RUN` step.
+- Not baked in. `uv` installs the version each project asks for (`.python-version` or `pyproject.toml`) on first `uv sync` or `uv run`.
+
+## Additional Tools (via Dev Container Features)
 
 ### Docker in Docker
 
-Docker is **not** in the image either. It comes from the official `ghcr.io/devcontainers/features/docker-in-docker:2` feature, which runs a real nested daemon inside the container. `kind` is installed in the image but cannot create a cluster without it.
+From the official `docker-in-docker` feature. `kind` needs it.
 
 ```json
 "features": {
@@ -37,11 +65,13 @@ Docker is **not** in the image either. It comes from the official `ghcr.io/devco
 }
 ```
 
-`"moby": false` is **required**, not optional. The feature defaults to `moby: true` and installs Moby packages, which Debian trixie — the current `javascript-node:22` base — does not ship, so the build fails with `The 'moby' option is not supported on debian 'trixie'`. With `moby: false` the feature installs upstream Docker CE from Docker's apt repo instead.
-
-DinD needs the container to run `--privileged`, and gives full isolation — clusters and bind-mount paths live inside the container, matching the host-mirrored `workspaceFolder` this setup relies on. The alternative feature, `docker-outside-of-docker:2`, only mounts the host's Docker socket: lighter and unprivileged, but the containers it starts are siblings on the host and their bind-mount paths resolve against the host filesystem, not the devcontainer's.
+- `"moby": false` is required. Debian trixie doesn't ship Moby packages (`The 'moby' option is not supported on debian 'trixie'`), so this installs Docker CE instead.
+- DinD rather than `docker-outside-of-docker`, so bind-mount paths resolve inside the container and match the host-mirrored `workspaceFolder`. Needs `--privileged`.
 
 ## Example `devcontainer.json`
+
+> [!IMPORTANT]
+> This sample file is just a small baseline. I'll publish an in-depth blog article later that covers the full setup, which includes several mounts.
 
 Copy [`devcontainer.sample.json`](./.devcontainer/devcontainer.sample.json) to your project's `.devcontainer/devcontainer.json` and adjust paths/mounts as needed.
 
@@ -52,15 +82,12 @@ Copy [`devcontainer.sample.json`](./.devcontainer/devcontainer.sample.json) to y
   "workspaceMount": "source=${localWorkspaceFolder},target=/Users/<user>/path/to/project,type=bind,consistency=cached",
   "workspaceFolder": "/Users/<user>/path/to/project",
   "features": {
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12"
-    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": false
     }
   },
   "mounts": [
-    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
   ],
   "postCreateCommand": "npm install",
   "dotfiles": {
@@ -106,9 +133,9 @@ docker run --rm -it julieio/agent-devcontainer:test bash
 
 ## Maintenance notes
 
-- `kubectl` installs from `dl.k8s.io/release/stable.txt` at build time — rebuilding the image (not just restarting a container) picks up new kubectl versions. Pin explicitly if cluster-version skew becomes a problem.
-- The base image, `yq` and `kind` versions are pinned as `ARG`s at the top of the Dockerfile — bump these manually; they don't auto-track latest.
-- Mermaid CLI (`mmdc`) was removed, along with the Chromium shared libraries it needed. Puppeteer installs Chrome for Testing, which publishes no `linux-arm64` build, so `mmdc` rendering never worked on arm64 hosts — it failed with `qemu-x86_64: Could not open '/lib64/ld-linux-x86-64.so.2'`. The old build-time `mmdc --version` check passed because `--version` never launches a browser. If a project needs it, install `chromium` from apt and set `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` there.
+- `kubectl` and `gh` aren't pinned: `kubectl` installs from `dl.k8s.io/release/stable.txt`, `gh` from GitHub's apt repo. Rebuilding the image picks up new versions. Pin `kubectl` if cluster-version skew becomes a problem.
+- The base image, `nvm`, Node, `@playwright/mcp`, `uv`, `yq` and `kind` are pinned as `ARG`s at the top of the Dockerfile — bump these manually. `debian13` is a moving tag, so the base also picks up Microsoft's rebuilds.
+- No Mermaid CLI (`mmdc`): Puppeteer's bundled Chrome for Testing has no linux-arm64 build. If a project needs it, point it at the image's Chromium with `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
 
 ## References
 
