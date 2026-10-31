@@ -109,3 +109,11 @@ docker run --rm -it julieio/agent-devcontainer:test bash
 - `kubectl` installs from `dl.k8s.io/release/stable.txt` at build time — rebuilding the image (not just restarting a container) picks up new kubectl versions. Pin explicitly if cluster-version skew becomes a problem.
 - The base image, `yq` and `kind` versions are pinned as `ARG`s at the top of the Dockerfile — bump these manually; they don't auto-track latest.
 - Mermaid CLI (`mmdc`) was removed, along with the Chromium shared libraries it needed. Puppeteer installs Chrome for Testing, which publishes no `linux-arm64` build, so `mmdc` rendering never worked on arm64 hosts — it failed with `qemu-x86_64: Could not open '/lib64/ld-linux-x86-64.so.2'`. The old build-time `mmdc --version` check passed because `--version` never launches a browser. If a project needs it, install `chromium` from apt and set `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` there.
+
+## References
+
+- [Claude Code Docs: Development containers](https://code.claude.com/docs/en/devcontainer)
+- Codex
+  - [Configuration](https://learn.chatgpt.com/docs/config-file/config-basic) – `.codex/config.toml`
+  - [Copy local auth cache](https://learn.chatgpt.com/docs/auth?surface=cli#cli-fallback-authenticate-locally-and-copy-your-auth-cache) – `~/.codex/auth.json`
+  - [Sandbox and approvals](https://learn.chatgpt.com/docs/agent-approvals-security#sandbox-and-approvals)
