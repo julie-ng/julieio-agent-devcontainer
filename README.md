@@ -12,7 +12,6 @@ A devcontainer base image for agent-assisted development. Coding agents (e.g. Cl
 | `jq` | JSON handling |
 | `yq` (mikefarah/yq, the Go binary — not apt's Python one) | YAML handling |
 | `gh` | GitHub CLI |
-| `glab` | GitLab CLI |
 | `kubectl` | Talk to a Kubernetes cluster |
 | `kind` | Local Kubernetes cluster — needs a working Docker daemon (see [Docker in Docker](#docker-in-docker)) |
 | `openssh-client` | `ssh-keygen` and general SSH usage |
@@ -108,5 +107,5 @@ docker run --rm -it julieio/agent-devcontainer:test bash
 ## Maintenance notes
 
 - `kubectl` installs from `dl.k8s.io/release/stable.txt` at build time — rebuilding the image (not just restarting a container) picks up new kubectl versions. Pin explicitly if cluster-version skew becomes a problem.
-- `yq`, `kind`, and `glab` versions are pinned explicitly in the Dockerfile (`v4.44.3`, `v0.24.0`, `1.118.0`) — bump these manually; they don't auto-track latest.
+- `yq` and `kind` versions are pinned explicitly in the Dockerfile (`v4.44.3`, `v0.24.0`) — bump these manually; they don't auto-track latest.
 - Mermaid CLI (`mmdc`) was removed, along with the Chromium shared libraries it needed. Puppeteer installs Chrome for Testing, which publishes no `linux-arm64` build, so `mmdc` rendering never worked on arm64 hosts — it failed with `qemu-x86_64: Could not open '/lib64/ld-linux-x86-64.so.2'`. The old build-time `mmdc --version` check passed because `--version` never launches a browser. If a project needs it, install `chromium` from apt and set `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` there.

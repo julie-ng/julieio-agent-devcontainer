@@ -22,7 +22,7 @@ ARG TARGETARCH
 
 # ---- OS packages -----------------------------------------------------------
 # - jq/yq: K8s manifests are YAML.
-# - gh/glab: inspect the webhook/PR/MR pipeline on GitHub and GitLab.
+# - gh: inspect the webhook/PR pipeline.
 # - openssh-client: ssh-keygen for per-agent SSH keys.
 # - unzip/bzip2/less/vim/ca-certificates/gnupg: general sandbox hygiene.
 RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends \
@@ -52,14 +52,6 @@ RUN sudo mkdir -p -m 755 /etc/apt/keyrings && \
     sudo apt-get update && sudo apt-get install -y gh && \
     sudo rm -rf /var/lib/apt/lists/*
 
-# GitLab CLI — no apt repo like GitHub's, so install the official .deb
-# release directly (pinned, unlike kubectl's tracking of the stable channel).
-RUN GLAB_VERSION="1.118.0" && \
-    curl -fsSL -o /tmp/glab.deb \
-        "https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads/glab_${GLAB_VERSION}_linux_${TARGETARCH}.deb" && \
-    sudo dpkg -i /tmp/glab.deb && \
-    rm -f /tmp/glab.deb
-
 # kubectl — official stable release channel.
 RUN KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)" && \
     sudo curl -fsSL -o /usr/local/bin/kubectl \
@@ -83,7 +75,6 @@ RUN sudo chsh -s /usr/bin/zsh node
 RUN jq --version && \
     yq --version && \
     gh --version && \
-    glab --version && \
     kubectl version --client && \
     kind version && \
     tsc --version
