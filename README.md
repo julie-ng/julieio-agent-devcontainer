@@ -107,5 +107,5 @@ docker run --rm -it julieio/agent-devcontainer:test bash
 ## Maintenance notes
 
 - `kubectl` installs from `dl.k8s.io/release/stable.txt` at build time — rebuilding the image (not just restarting a container) picks up new kubectl versions. Pin explicitly if cluster-version skew becomes a problem.
-- `yq` and `kind` versions are pinned explicitly in the Dockerfile (`v4.44.3`, `v0.24.0`) — bump these manually; they don't auto-track latest.
+- The base image, `yq` and `kind` versions are pinned as `ARG`s at the top of the Dockerfile — bump these manually; they don't auto-track latest.
 - Mermaid CLI (`mmdc`) was removed, along with the Chromium shared libraries it needed. Puppeteer installs Chrome for Testing, which publishes no `linux-arm64` build, so `mmdc` rendering never worked on arm64 hosts — it failed with `qemu-x86_64: Could not open '/lib64/ld-linux-x86-64.so.2'`. The old build-time `mmdc --version` check passed because `--version` never launches a browser. If a project needs it, install `chromium` from apt and set `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` there.

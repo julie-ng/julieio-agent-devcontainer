@@ -16,7 +16,14 @@
 #   - kind needs a working Docker daemon — from the docker-in-docker feature in
 #     devcontainer.json, not this image.
 
-FROM mcr.microsoft.com/devcontainers/javascript-node:22
+ARG NODE_VERSION=22
+
+FROM mcr.microsoft.com/devcontainers/javascript-node:${NODE_VERSION}
+
+# ---- Pinned versions -------------------------------------------------------
+# Bump manually; they don't auto-track latest.
+ARG YQ_VERSION=v4.54.1
+ARG KIND_VERSION=v0.33.0
 
 ARG TARGETARCH
 
@@ -37,8 +44,7 @@ RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     && sudo rm -rf /var/lib/apt/lists/*
 
 # yq (Go binary, mikefarah/yq) — apt's yq is an unrelated Python wrapper.
-RUN YQ_VERSION="v4.44.3" && \
-    sudo curl -fsSL -o /usr/local/bin/yq \
+RUN sudo curl -fsSL -o /usr/local/bin/yq \
         "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${TARGETARCH}" && \
     sudo chmod +x /usr/local/bin/yq
 
@@ -59,8 +65,7 @@ RUN KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)" && \
     sudo chmod +x /usr/local/bin/kubectl
 
 # Kind — local Kubernetes cluster.
-RUN KIND_VERSION="v0.24.0" && \
-    sudo curl -fsSL -o /usr/local/bin/kind \
+RUN sudo curl -fsSL -o /usr/local/bin/kind \
         "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-${TARGETARCH}" && \
     sudo chmod +x /usr/local/bin/kind
 
